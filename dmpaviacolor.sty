@@ -1,0 +1,44 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{dmpaviacolor}[2026/10/06 DM UniPV colour palette]
+
+\RequirePackage{xcolor}
+
+% Main colour
+\definecolor{unipvred}{RGB}{175, 45, 82}
+\colorlet{maincolor}{unipvred}
+\colorlet{darkred}{unipvred}
+\definecolor{unipvblue}{RGB}{30,72,159}
+
+% Neutrals and maroon tints used by the theme
+\definecolor{dmink}{HTML}{262626}      % headings
+\definecolor{dmtext}{HTML}{333333}     % body text
+\definecolor{dmsubtext}{HTML}{595959}  % second-level text, subtitles
+\definecolor{dmmuted}{HTML}{7F7F7F}    % footer, captions
+\definecolor{dmlightmuted}{HTML}{A6A6A6}
+\definecolor{dmtint}{HTML}{F6E9ED}     % result / theorem cards
+\definecolor{dmblush}{HTML}{F2D9E0}    % light text on maroon
+\definecolor{dmpink}{HTML}{E6AFBF}     % section numbers (diagonal style)
+\definecolor{dmnumred}{HTML}{C65A7A}   % giant numerals (numeral style)
+
+% "Warm grey"
+\definecolor{sintefgrey}{RGB/cmyk}{235,235,230/0,0,0,.1}
+\colorlet{sintefgray}{sintefgrey}
+
+% Blue
+\definecolor{unipiblue}{RGB/cmyk}{0,53,118/100,55,0,54}
+
+% Greens
+\definecolorset{RGB/cmyk}{sintef}{}{lightgreen, 205,250,225/.23, 0,.20, 0;%
+      green,       20,185,120/.73, 0,.67, 0;%
+      darkgreen,    0, 70, 40/.93,.43,.92,.52}
+
+% Additional colours
+\definecolorset{RGB/cmyk}{sintef}{}{yellow, 200,155,20/20, 36,98, 8;%
+      red,    190, 60,55/19, 86,77, 8;%
+      lilla,  120,  0,80/48,100,27,31}
+
+% Deprecated colours for backward compatibility
+\definecolorset{HTML}{sintef}{}{cyan,      22A7E5;%
+      magenta,   EC008C;%
+      lightgrey, D8D0C7}
+\colorlet{sinteflightgray}{sinteflightgrey}
