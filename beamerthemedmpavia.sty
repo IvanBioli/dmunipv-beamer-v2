@@ -35,11 +35,14 @@
 % Options
 %   sectionstyle = diagonal | numeral | none     (default: diagonal)
 %   assets       = path to the assets folder     (default: assets)
+%   kicker       = section | none                (default: section)
 % ------------------------------------------------------------------
 \def\dm@sectionstyle{diagonal}
 \def\dm@assets{assets}
+\def\dm@kickermode{section}
 \DeclareOptionBeamer{sectionstyle}{\def\dm@sectionstyle{#1}}
 \DeclareOptionBeamer{assets}{\def\dm@assets{#1}}
+\DeclareOptionBeamer{kicker}{\def\dm@kickermode{#1}}
 \ProcessOptionsBeamer
 \newcommand{\setsectionstyle}[1]{\def\dm@sectionstyle{#1}}
 
@@ -52,21 +55,21 @@
 % for text. pdfLaTeX uses the CTAN packages, Lua/XeLaTeX the system fonts.
 % ------------------------------------------------------------------
 \ifPDFTeX
-      \RequirePackage{caladea,carlito}
+  \RequirePackage{caladea,carlito}
 \else
-      \RequirePackage{fontspec}
-      \setmainfont{Caladea}
-      \setsansfont{Carlito}
+  \RequirePackage{fontspec}
+  \setmainfont{Caladea}
+  \setsansfont{Carlito}
 \fi
 \renewcommand{\familydefault}{\sfdefault}
 \usefonttheme[onlymath]{serif}
 
 % Letter-spaced small labels (kickers, card labels)
 \ifPDFTeX
-      \AtEndPreamble{\@ifpackageloaded{microtype}{}{\RequirePackage{microtype}}}
-      \newcommand{\dm@spaced}[1]{\textls[160]{\MakeUppercase{#1}}}
+  \AtEndPreamble{\@ifpackageloaded{microtype}{}{\RequirePackage{microtype}}}
+  \newcommand{\dm@spaced}[1]{\textls[160]{\MakeUppercase{#1}}}
 \else
-      \newcommand{\dm@spaced}[1]{{\addfontfeatures{LetterSpace=14}\MakeUppercase{#1}}}
+  \newcommand{\dm@spaced}[1]{{\addfontfeatures{LetterSpace=14}\MakeUppercase{#1}}}
 \fi
 \newcommand{\dmheadfont}{\rmfamily\bfseries}
 % Slides read better without hyphenation (as in the PowerPoint template)
@@ -98,6 +101,8 @@
 \setbeamercolor{title}{fg=dmink}
 \setbeamercolor{author}{fg=dmink}
 \setbeamercolor{date}{fg=dmmuted}
+\setbeamercolor{subtitle}{fg=dmsubtext}
+\setbeamercolor{slideref}{fg=dmmuted}
 \hypersetup{colorlinks=true,linkcolor=,urlcolor=unipvblue}
 
 % ------------------------------------------------------------------
@@ -107,6 +112,12 @@
 \setbeamerfont{framesubtitle}{family=\sffamily,series=\mdseries,size=\normalsize}
 \setbeamerfont{framekicker}{family=\sffamily,series=\bfseries,size=\fontsize{6.5}{8}}
 \setbeamerfont{footline}{size=\tiny}
+\setbeamerfont{slideref}{size=\fontsize{5}{6}}
+% Title page
+\setbeamerfont{title}{family=\rmfamily,series=\bfseries,size=\fontsize{16}{19}}
+\setbeamerfont{subtitle}{family=\sffamily,series=\mdseries,size=\small}
+\setbeamerfont{author}{family=\sffamily,series=\bfseries,size=\footnotesize}
+\setbeamerfont{date}{family=\sffamily,series=\mdseries,size=\tiny}
 \setbeamerfont{itemize/enumerate subbody}{size=\small}
 \setbeamerfont{itemize/enumerate subsubbody}{size=\footnotesize}
 
@@ -129,60 +140,91 @@
 
 % Absolute-position canvas (origin bottom left, units in cm), for backgrounds
 \newcommand{\dm@canvas}[1]{%
-      \begin{tikzpicture}[x=1cm,y=1cm,inner sep=0pt,outer sep=0pt]
-            \useasboundingbox (0,0) rectangle (\paperwidth,\paperheight);
-            #1
-      \end{tikzpicture}}
+  \begin{tikzpicture}[x=1cm,y=1cm,inner sep=0pt,outer sep=0pt]
+    \useasboundingbox (0,0) rectangle (\paperwidth,\paperheight);
+    #1
+  \end{tikzpicture}}
 \newcommand{\dm@toplogo}[1]{\node[anchor=north west] at (0.9,8.4) {\includegraphics[width=0.74cm]{#1}};}
 % The diagonal maroon split used on title, section and closing slides
 \newcommand{\dm@split}[1]{%
-      \begin{scope}
-            \clip (0.56\paperwidth,0) -- (\paperwidth,0) -- (\paperwidth,\paperheight) -- (0.76\paperwidth,\paperheight) -- cycle;
-            \node at (0.86\paperwidth,0.5\paperheight) {\includegraphics[height=\paperheight]{#1}};
-      \end{scope}}
+  \begin{scope}
+    \clip (0.56\paperwidth,0) -- (\paperwidth,0) -- (\paperwidth,\paperheight) -- (0.76\paperwidth,\paperheight) -- cycle;
+    \node at (0.86\paperwidth,0.5\paperheight) {\includegraphics[height=\paperheight]{#1}};
+  \end{scope}}
 % Fill a rectangle with an image, cropping it like CSS "object-fit: cover"
 \newsavebox{\dm@imgbox}
 \newcommand{\dm@cover}[5]{% x, y, width, height (cm), file
-      \sbox{\dm@imgbox}{\includegraphics{#5}}%
-      \pgfmathsetmacro{\dm@imgratio}{\wd\dm@imgbox/\ht\dm@imgbox}%
-      \pgfmathsetmacro{\dm@boxratio}{#3/#4}%
-      \begin{scope}
-            \clip (#1,#2) rectangle ++(#3,#4);
-            \pgfmathparse{\dm@imgratio>\dm@boxratio ? 1 : 0}%
-            \ifnum\pgfmathresult=1
-                  \node at ({#1+#3/2},{#2+#4/2}) {\includegraphics[height=#4cm]{#5}};
-            \else
-                  \node at ({#1+#3/2},{#2+#4/2}) {\includegraphics[width=#3cm]{#5}};
-            \fi
-      \end{scope}}
+  \sbox{\dm@imgbox}{\includegraphics{#5}}%
+  \pgfmathsetmacro{\dm@imgratio}{\wd\dm@imgbox/\ht\dm@imgbox}%
+  \pgfmathsetmacro{\dm@boxratio}{#3/#4}%
+  \begin{scope}
+    \clip (#1,#2) rectangle ++(#3,#4);
+    \pgfmathparse{\dm@imgratio>\dm@boxratio ? 1 : 0}%
+    \ifnum\pgfmathresult=1
+      \node at ({#1+#3/2},{#2+#4/2}) {\includegraphics[height=#4cm]{#5}};
+    \else
+      \node at ({#1+#3/2},{#2+#4/2}) {\includegraphics[width=#3cm]{#5}};
+    \fi
+  \end{scope}}
 
 % ------------------------------------------------------------------
 % Headline, frame title (with section kicker) and footline
 % ------------------------------------------------------------------
-\setbeamertemplate{headline}{\vskip0.42cm}
+% Space above the frame title and between the title and the content
+\newlength{\dmheadskip}\setlength{\dmheadskip}{0.42cm}
+\newlength{\dmtitleskip}\setlength{\dmtitleskip}{0.15cm}
+\setbeamertemplate{headline}{\vskip\dmheadskip}
 
 % Kicker: the small maroon label above each title. Defaults to the
-% current section; override per frame with \framekicker{...}, hide
-% with \nokicker.
-\def\dm@framekicker{\insertsectionhead}
+% current section (theme option kicker=none hides it everywhere);
+% override per frame with \framekicker{...}, hide with \nokicker.
+\ifdefstring{\dm@kickermode}{none}{\def\dm@framekicker{}}{\def\dm@framekicker{\insertsectionhead}}
 \newcommand{\framekicker}[1]{\def\dm@framekicker{#1}}
 \newcommand{\nokicker}{\def\dm@framekicker{}}
 \def\dm@titlewidth{\textwidth}
 
 \setbeamertemplate{frametitle}{%
-      \begin{minipage}[t]{\dm@titlewidth}
-            \raggedright
-            {\usebeamerfont{framekicker}\usebeamercolor[fg]{framekicker}%
-                  \setbox0\hbox{\dm@framekicker}\ifdim\wd0>0pt\dm@spaced{\dm@framekicker}\fi\strut\par}%
-            \vskip0.6mm
-            {\usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\insertframetitle\par}%
-            \ifx\insertframesubtitle\@empty\else
-                  \vskip0.8mm
-                  {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle\par}%
-            \fi
-      \end{minipage}%
-      \vskip0.35cm}
+  \begin{minipage}[t]{\dm@titlewidth}
+    \raggedright
+    \setbox0\hbox{\dm@framekicker}%
+    \ifdim\wd0>0pt
+    {\usebeamerfont{framekicker}\usebeamercolor[fg]{framekicker}\dm@spaced{\dm@framekicker}\strut\par}%
+    \vskip0.6mm
+    \fi
+    {\usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\insertframetitle\par}%
+    \ifx\insertframesubtitle\@empty\else
+      \vskip0.8mm
+      {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle\par}%
+    \fi
+  \end{minipage}%
+  \vskip\dmtitleskip}
 \setbeamertemplate{frametitle continuation}{}
+
+% References at the bottom of the slide, below the frame number:
+%   \slidecite{key1,key2}  -> "Badia et al., Title, 2024 · ..." (biblatex;
+%                             the title is the shorttitle field if present)
+%   \slideref{free text}   -> any text
+\newcommand{\dm@slirefsep}{\par}
+\newcommand{\slideref}[1]{%
+  \ifdefempty{\dm@slirefs}{\gdef\dm@slirefs{#1}}{\gappto\dm@slirefs{\dm@slirefsep#1}}}
+\def\dm@slirefs{}
+\AtBeginEnvironment{frame}{\gdef\dm@slirefs{}}
+\AtEndPreamble{\@ifpackageloaded{biblatex}{%
+    \DeclareCiteCommand{\dm@slidecite}{}{%
+      \printnames{labelname}%
+      \setunit{\addcomma\space}\printfield[noformat]{labeltitle}%
+      \setunit{\addcomma\space}\printfield{labelyear}}{\dm@slirefsep}{}
+    \newcommand{\slidecite}[1]{\nocite{#1}\slideref{\dm@slidecite{#1}}}%
+  }{\newcommand{\slidecite}[1]{\slideref{#1}}}}
+\newcommand{\dm@printslirefs}{%
+  \ifdefempty{\dm@slirefs}{}{%
+    \nointerlineskip
+    \vbox to0pt{\vss
+        \hbox{\hskip0.9cm\parbox[b]{\dimexpr\paperwidth-1.8cm\relax}{%
+            \usebeamerfont{slideref}\usebeamercolor[fg]{slideref}\raggedright\dm@slirefs}}%
+        \vskip1.2mm}%
+    \nointerlineskip}%
+  \gdef\dm@slirefs{}}
 
 % Footline: frame number left, "Author · Short title" and logo right
 \providecommand{\insertshorttitle}{\inserttitle}
@@ -190,15 +232,16 @@
 \newcommand{\footlinepayoff}[1]{\renewcommand{\dm@footlinepayoff}{#1}}
 \newbool{dm@footlogo}\booltrue{dm@footlogo}
 \setbeamertemplate{footline}{%
-      \ifnum\c@framenumber>0
-            \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
-            \hbox to\paperwidth{%
-                  \hskip0.9cm\insertframenumber\hfill
-                  \dm@footlinepayoff
-                  \ifbool{dm@footlogo}{\hskip0.3cm\raisebox{-0.22cm}{\includegraphics[width=0.48cm]{\dm@footlogo}}}{}%
-                  \hskip0.9cm}%
-            \vskip0.42cm
-      \fi}
+  \ifnum\c@framenumber>0
+    \usebeamerfont{footline}\usebeamercolor[fg]{footline}%
+    \hbox to\paperwidth{%
+      \hskip0.9cm\insertframenumber\hfill
+      \dm@footlinepayoff
+      \ifbool{dm@footlogo}{\hskip0.3cm\raisebox{-0.22cm}{\includegraphics[width=0.48cm]{\dm@footlogo}}}{}%
+      \hskip0.9cm}%
+    \vskip0.42cm
+    \dm@printslirefs
+  \fi}
 % Kept for backward compatibility with the 2025 theme: footlines are now always quiet
 \newcommand{\footlinecolor}[1]{}
 
@@ -214,47 +257,47 @@
 \newcommand{\dm@settitlebg}[1]{\renewcommand{\dm@titlebg}{#1}}
 
 \renewcommand{\maketitle}{%
-      \begingroup
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \dm@split{\dm@titlebg}
-                  \dm@toplogo{\dm@colorlogo}
-                  \node[anchor=north west,text width=8.6cm,align=left] at (0.9,6.35) {%
-                        \ifdefempty{\dm@courseLabel}{}{%
-                              {\usebeamerfont{framekicker}\color{maincolor}\dm@spaced{\dm@courseLabel}\par}\vskip2.5mm}%
-                        {\dmheadfont\fontsize{19}{22}\selectfont\color{dmink}\inserttitle\par}%
-                        \ifx\insertsubtitle\@empty\else
-                              \vskip2.5mm{\normalsize\color{dmsubtext}\insertsubtitle\par}%
-                        \fi};
-                  \node[anchor=south west,text width=8cm,align=left] at (0.9,1.25) {%
-                        {\small\bfseries\color{dmink}\insertauthor\ifdefempty{\dm@IDnumber}{}{\mdseries\ (\dm@IDnumber)}\par}%
-                        \vskip1mm{\scriptsize\color{dmmuted}\insertdate\par}};
-            }}%
-      \begin{frame}[plain,noframenumbering]\end{frame}%
-      \endgroup}
+  \begingroup
+  \setbeamertemplate{background}{\dm@canvas{%
+      \dm@split{\dm@titlebg}
+      \dm@toplogo{\dm@colorlogo}
+      \node[anchor=north west,text width=8.6cm,align=left] at (0.9,6.35) {%
+        \ifdefempty{\dm@courseLabel}{}{%
+          {\usebeamerfont{framekicker}\color{maincolor}\dm@spaced{\dm@courseLabel}\par}\vskip2.5mm}%
+        {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}%
+        \ifx\insertsubtitle\@empty\else
+          \vskip2mm{\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+        \fi};
+      \node[anchor=south west,text width=8cm,align=left] at (0.9,1.25) {%
+        {\usebeamerfont{author}\usebeamercolor[fg]{author}\insertauthor\ifdefempty{\dm@IDnumber}{}{\mdseries\ (\dm@IDnumber)}\par}%
+        \vskip1mm{\usebeamerfont{date}\usebeamercolor[fg]{date}\insertdate\par}};
+    }}%
+  \begin{frame}[plain,noframenumbering]\end{frame}%
+  \endgroup}
 
 % ------------------------------------------------------------------
 % Outline (agenda) frame: maroon panel on the left, numbered sections
 % ------------------------------------------------------------------
 \setbeamertemplate{section in toc}{%
-      \vskip0.9ex\leavevmode\hbox to1.8em{\color{maincolor}\inserttocsectionnumber.\hfil}{\color{dmink}\inserttocsection}\par}
+  \vskip0.9ex\leavevmode\hbox to1.8em{\color{maincolor}\inserttocsectionnumber.\hfil}{\color{dmink}\inserttocsection}\par}
 \setbeamertemplate{section in toc shaded}[default][40]
 \setbeamertemplate{subsection in toc}{%
-      \vskip0.2ex\leavevmode\hskip1.8em{\small\color{dmsubtext}\inserttocsubsection\par}}
+\vskip0.2ex\leavevmode\hskip1.8em{\small\color{dmsubtext}\inserttocsubsection\par}}
 
 \newcommand{\outlineframe}[1][Outline]{%
-      \begingroup
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \fill[maincolor] (0,0) rectangle (5.52,9);
-                  \dm@toplogo{\dm@whitelogo}
-                  \node[anchor=south west,text width=4.1cm,align=left] at (0.9,4.3)
-                  {\dmheadfont\fontsize{19}{22}\selectfont\color{white}#1};
-            }}%
-      \begin{frame}[plain,c,noframenumbering]
-            \hspace*{5.7cm}\begin{minipage}{8.4cm}
-                  \large\color{dmink}\tableofcontents[hideallsubsections]
-            \end{minipage}
-      \end{frame}%
-      \endgroup}
+  \begingroup
+  \setbeamertemplate{background}{\dm@canvas{%
+      \fill[maincolor] (0,0) rectangle (5.52,9);
+      \dm@toplogo{\dm@whitelogo}
+      \node[anchor=south west,text width=4.1cm,align=left] at (0.9,4.3)
+      {\dmheadfont\fontsize{19}{22}\selectfont\color{white}#1};
+    }}%
+  \begin{frame}[plain,c,noframenumbering]
+    \hspace*{5.7cm}\begin{minipage}{8.4cm}
+      \large\color{dmink}\tableofcontents[hideallsubsections]
+    \end{minipage}
+  \end{frame}%
+  \endgroup}
 
 % ------------------------------------------------------------------
 % Section headers. Choose one style per talk with the theme option
@@ -266,43 +309,43 @@
 \newcommand{\dm@sectionnumber}{\ifnum\value{section}<10 0\fi\arabic{section}}
 
 \newcommand{\dm@sectiondiagonal}{%
-      \setbeamercolor{background canvas}{bg=maincolor}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \dm@split{\dm@assets/background_negative}
-                  \dm@toplogo{\dm@whitelogo}
-                  \node[anchor=south west] at (0.9,5.3)
-                  {\dmheadfont\fontsize{42}{42}\selectfont\color{dmpink}\dm@sectionnumber};
-                  \node[anchor=north west,text width=7.4cm,align=left] at (0.9,5.0)
-                  {\dmheadfont\fontsize{19}{22}\selectfont\color{white}\insertsectionhead};
-                  \node[anchor=north west,text width=6.7cm,align=left] at (0.9,3.25) {%
-                        \small\color{white}%
-                        \ifdefempty{\dm@nextlead}{%
-                              \setbeamertemplate{subsection in toc}{\leavevmode\textendash~\inserttocsubsection\par\vskip0.3ex}%
-                              \setbeamertemplate{section in toc}{}%
-                              \tableofcontents[currentsection,sectionstyle=hide/hide,subsectionstyle=show/show/hide]%
-                        }{\dm@nextlead}};
-            }}%
-      \begin{frame}[plain,noframenumbering]\end{frame}}
+  \setbeamercolor{background canvas}{bg=maincolor}%
+  \setbeamertemplate{background}{\dm@canvas{%
+      \dm@split{\dm@assets/background_negative}
+      \dm@toplogo{\dm@whitelogo}
+      \node[anchor=south west] at (0.9,5.3)
+      {\dmheadfont\fontsize{42}{42}\selectfont\color{dmpink}\dm@sectionnumber};
+      \node[anchor=north west,text width=7.4cm,align=left] at (0.9,5.0)
+      {\dmheadfont\fontsize{19}{22}\selectfont\color{white}\insertsectionhead};
+      \node[anchor=north west,text width=6.7cm,align=left] at (0.9,3.25) {%
+        \small\color{white}%
+        \ifdefempty{\dm@nextlead}{%
+          \setbeamertemplate{subsection in toc}{\leavevmode\textendash~\inserttocsubsection\par\vskip0.3ex}%
+          \setbeamertemplate{section in toc}{}%
+          \tableofcontents[currentsection,sectionstyle=hide/hide,subsectionstyle=show/show/hide]%
+        }{\dm@nextlead}};
+    }}%
+  \begin{frame}[plain,noframenumbering]\end{frame}}
 
 \newcommand{\dm@sectionnumeral}{%
-      \setbeamercolor{background canvas}{bg=maincolor}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \node[anchor=south east] at (15.4,2.75)
-                  {\dmheadfont\fontsize{118}{118}\selectfont\color{dmnumred}\dm@sectionnumber};
-                  \dm@toplogo{\dm@whitelogo}
-                  \node[anchor=south west,text width=9.6cm,align=left] at (0.9,2.7)
-                  {\dmheadfont\fontsize{23}{26}\selectfont\color{white}\insertsectionhead};
-                  \node[anchor=north west,text width=9cm,align=left] at (0.9,2.4)
-                  {\normalsize\color{dmblush}\dm@nextlead};
-            }}%
-      \begin{frame}[plain,noframenumbering]\end{frame}}
+  \setbeamercolor{background canvas}{bg=maincolor}%
+  \setbeamertemplate{background}{\dm@canvas{%
+      \node[anchor=south east] at (15.4,2.75)
+      {\dmheadfont\fontsize{118}{118}\selectfont\color{dmnumred}\dm@sectionnumber};
+      \dm@toplogo{\dm@whitelogo}
+      \node[anchor=south west,text width=9.6cm,align=left] at (0.9,2.7)
+      {\dmheadfont\fontsize{23}{26}\selectfont\color{white}\insertsectionhead};
+      \node[anchor=north west,text width=9cm,align=left] at (0.9,2.4)
+      {\normalsize\color{dmblush}\dm@nextlead};
+    }}%
+  \begin{frame}[plain,noframenumbering]\end{frame}}
 
 \AtBeginSection[]{%
-      \begingroup
-      \ifdefstring{\dm@sectionstyle}{diagonal}{\dm@sectiondiagonal}{}%
-      \ifdefstring{\dm@sectionstyle}{numeral}{\dm@sectionnumeral}{}%
-      \endgroup
-      \gdef\dm@nextlead{}}
+  \begingroup
+  \ifdefstring{\dm@sectionstyle}{diagonal}{\dm@sectiondiagonal}{}%
+  \ifdefstring{\dm@sectionstyle}{numeral}{\dm@sectionnumeral}{}%
+  \endgroup
+  \gdef\dm@nextlead{}}
 
 % ------------------------------------------------------------------
 % Cards (tcolorbox). Styles can be combined freely:
@@ -310,22 +353,22 @@
 %   plus any tcolorbox option (width, height, equal height group, ...)
 % ------------------------------------------------------------------
 \tcbset{
-      dm/base/.style={enhanced, arc=1.6mm, boxrule=0pt, frame hidden,
-                  left=3.2mm, right=3.2mm, top=2.6mm, bottom=2.8mm, boxsep=0pt,
-                  before skip=1.5mm, after skip=1.5mm,
-                  colback=sintefgrey, coltext=dmink, coltitle=maincolor,
-                  fonttitle=\sffamily\bfseries\fontsize{6.5}{8}\selectfont,
-                  fontupper=\rmfamily, halign=left},
-      dm/label/.code={\ifstrempty{#1}{}{\pgfkeysalso{title={\dm@spaced{#1}},attach title to upper={\par\vspace{1.2mm}}}}},
-      dm/style/.code={\edef\dm@tmp{\noexpand\pgfkeysalso{#1}}\dm@tmp},
-      grey/.style={colback=sintefgrey, coltext=dmink, coltitle=maincolor},
-      tint/.style={colback=dmtint, coltext=dmink, coltitle=maincolor},
-      maroon/.style={colback=maincolor, coltext=white, coltitle=dmblush},
-      outline/.style={colback=white, borderline={0.5pt}{0pt}{maincolor}, coltitle=maincolor},
-      accent/.style={colback=#1!14, coltitle=#1!75!black, coltext=dmink},
-      large/.style={fontupper=\rmfamily\large},
-      serif/.style={fontupper=\rmfamily},
-      sans/.style={fontupper=\sffamily},
+  dm/base/.style={enhanced, arc=1.6mm, boxrule=0pt, frame hidden,
+      left=3.2mm, right=3.2mm, top=2.6mm, bottom=2.8mm, boxsep=0pt,
+      before skip=1.5mm, after skip=1.5mm,
+      colback=sintefgrey, coltext=dmink, coltitle=maincolor,
+      fonttitle=\sffamily\bfseries\fontsize{6.5}{8}\selectfont,
+      fontupper=\rmfamily, halign=left},
+  dm/label/.code={\ifstrempty{#1}{}{\pgfkeysalso{title={\dm@spaced{#1}},attach title to upper={\par\vspace{1.2mm}}}}},
+dm/style/.code={\edef\dm@tmp{\noexpand\pgfkeysalso{#1}}\dm@tmp},
+grey/.style={colback=sintefgrey, coltext=dmink, coltitle=maincolor},
+tint/.style={colback=dmtint, coltext=dmink, coltitle=maincolor},
+maroon/.style={colback=maincolor, coltext=white, coltitle=dmblush},
+outline/.style={colback=white, borderline={0.5pt}{0pt}{maincolor}, coltitle=maincolor},
+accent/.style={colback=#1!14, coltitle=#1!75!black, coltext=dmink},
+large/.style={fontupper=\rmfamily\large},
+serif/.style={fontupper=\rmfamily},
+sans/.style={fontupper=\sffamily},
 }
 
 % Generic card: \begin{card}[options]{Label} ... \end{card}
@@ -335,15 +378,17 @@
 \newtcolorbox{theorembox}[2][]{dm/base, tint, dm/label={#2}, #1}
 \newtcolorbox{resultbox}[2][]{dm/base, tint, large, top=3.6mm, bottom=4mm, left=4.5mm, right=4.5mm, dm/label={#2}, #1}
 \newtcolorbox{takeaway}[1][]{dm/base, maroon, top=3.6mm, left=4mm, right=4mm, bottom=4mm,
-      fontupper=\rmfamily\bfseries\large, dm/label={Key takeaway}, #1}
+  fontupper=\rmfamily\bfseries\large, dm/label={Key takeaway}, #1}
 
-% Beamer blocks become cards: block = grey, alertblock = tint, exampleblock = green
-\setbeamertemplate{block begin}{\begin{tcolorbox}[dm/base,grey,sans,dm/label={\insertblocktitle}]}
-\setbeamertemplate{block end}{\end{tcolorbox}}
-\setbeamertemplate{block alerted begin}{\begin{tcolorbox}[dm/base,tint,sans,dm/label={\insertblocktitle}]}
-\setbeamertemplate{block alerted end}{\end{tcolorbox}}
-\setbeamertemplate{block example begin}{\begin{tcolorbox}[dm/base,accent=sintefgreen,sans,dm/label={\insertblocktitle}]}
-\setbeamertemplate{block example end}{\end{tcolorbox}}
+% Beamer blocks become cards: block = grey, alertblock = tint, exampleblock = green.
+% A block with an empty title (\begin{block}{}) gets no label and no space for it.
+\tcbset{dm/blocklabel/.code={\ifx\insertblocktitle\@empty\else\pgfkeysalso{dm/label={\insertblocktitle}}\fi}}
+\setbeamertemplate{block begin}{\begin{tcolorbox}[dm/base,grey,sans,dm/blocklabel]}
+    \setbeamertemplate{block end}{\end{tcolorbox}}
+\setbeamertemplate{block alerted begin}{\begin{tcolorbox}[dm/base,tint,sans,dm/blocklabel]}
+    \setbeamertemplate{block alerted end}{\end{tcolorbox}}
+\setbeamertemplate{block example begin}{\begin{tcolorbox}[dm/base,accent=sintefgreen,sans,dm/blocklabel]}
+    \setbeamertemplate{block example end}{\end{tcolorbox}}
 
 % Beamer theorem environments become cards: theorem-like = tint, definition = grey
 \def\dm@thmstyle{tint}
@@ -352,13 +397,13 @@
 \AtBeginEnvironment{example}{\def\dm@thmstyle{accent=sintefgreen}}
 \AtBeginEnvironment{examples}{\def\dm@thmstyle{accent=sintefgreen}}
 \setbeamertemplate{theorem begin}{%
-      \begin{tcolorbox}[dm/base,dm/style=\dm@thmstyle,
-                  dm/label={\inserttheoremname\inserttheoremnumber\ifx\inserttheoremaddition\@empty\else\ (\inserttheoremaddition)\fi}]}
-\setbeamertemplate{theorem end}{\end{tcolorbox}}
+  \begin{tcolorbox}[dm/base,dm/style=\dm@thmstyle,
+      dm/label={\inserttheoremname\inserttheoremnumber\ifx\inserttheoremaddition\@empty\else\ (\inserttheoremaddition)\fi}]}
+    \setbeamertemplate{theorem end}{\end{tcolorbox}}
 
 % Old colorblock environment, now a card: \begin{colorblock}[text colour]{background}{title}
 \newenvironment{colorblock}[3][dmink]{%
-      \begin{tcolorbox}[dm/base,sans,colback=#2,coltext=#1,coltitle=#1,dm/label={#3}]}{\end{tcolorbox}}
+  \begin{tcolorbox}[dm/base,sans,colback=#2,coltext=#1,coltitle=#1,dm/label={#3}]}{\end{tcolorbox}}
 
 % ------------------------------------------------------------------
 % Small building blocks
@@ -367,38 +412,38 @@
 \newcommand{\colheading}[1]{{\usebeamerfont{framekicker}\color{maincolor}\dm@spaced{#1}\par}\vskip1.2mm}
 % Big number with a label underneath: \bignumber{16}{slide layouts}
 \newcommand{\bignumber}[2]{%
-      {\dmheadfont\fontsize{38}{38}\selectfont\color{maincolor}#1\par}\vskip1.5mm
-      {\small\color{dmtext}#2\par}}
+{\dmheadfont\fontsize{38}{38}\selectfont\color{maincolor}#1\par}\vskip1.5mm
+{\small\color{dmtext}#2\par}}
 
 % ------------------------------------------------------------------
 % Statement slides
 % ------------------------------------------------------------------
 % Quote on warm grey: \quoteframe{Statement}{Attribution}
 \newcommand{\quoteframe}[2]{%
-      \begingroup
-      \setbeamercolor{background canvas}{bg=sintefgrey}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \node[anchor=north west] at (1.5,7.95) {\dmheadfont\fontsize{64}{64}\selectfont\color{maincolor}\textquotedblleft};
-                  \node[anchor=west,text width=12.4cm,align=left] at (1.8,4.75)
-                  {\rmfamily\itshape\fontsize{17}{21}\selectfont\color{dmink}#1};
-                  \node[anchor=north west,text width=12.4cm,align=left] at (1.8,2.7)
-                  {\small\bfseries\color{maincolor}#2};
-            }}%
-      \begin{frame}\end{frame}%
-      \endgroup}
+  \begingroup
+  \setbeamercolor{background canvas}{bg=sintefgrey}%
+  \setbeamertemplate{background}{\dm@canvas{%
+      \node[anchor=north west] at (1.5,7.95) {\dmheadfont\fontsize{64}{64}\selectfont\color{maincolor}\textquotedblleft};
+      \node[anchor=west,text width=12.4cm,align=left] at (1.8,4.75)
+      {\rmfamily\itshape\fontsize{17}{21}\selectfont\color{dmink}#1};
+      \node[anchor=north west,text width=12.4cm,align=left] at (1.8,2.7)
+      {\small\bfseries\color{maincolor}#2};
+    }}%
+  \begin{frame}\end{frame}%
+  \endgroup}
 % Key message on maroon: \keymessage{Message}{Source}
 \newcommand{\keymessage}[2]{%
-      \begingroup
-      \setbeamercolor{background canvas}{bg=maincolor}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \dm@toplogo{\dm@whitelogo}
-                  \node[anchor=south west,text width=13.2cm,align=left] at (0.9,2.65)
-                  {\dmheadfont\fontsize{19}{23}\selectfont\color{white}#1};
-                  \node[anchor=north west,text width=13.2cm,align=left] at (0.9,2.25)
-                  {\usebeamerfont{framekicker}\color{dmblush}\dm@spaced{#2}};
-            }}%
-      \begin{frame}[plain]\end{frame}%
-      \endgroup}
+  \begingroup
+  \setbeamercolor{background canvas}{bg=maincolor}%
+  \setbeamertemplate{background}{\dm@canvas{%
+      \dm@toplogo{\dm@whitelogo}
+      \node[anchor=south west,text width=13.2cm,align=left] at (0.9,2.65)
+      {\dmheadfont\fontsize{19}{23}\selectfont\color{white}#1};
+      \node[anchor=north west,text width=13.2cm,align=left] at (0.9,2.25)
+      {\usebeamerfont{framekicker}\color{dmblush}\dm@spaced{#2}};
+    }}%
+  \begin{frame}[plain]\end{frame}%
+  \endgroup}
 
 % ------------------------------------------------------------------
 % Picture slides
@@ -406,41 +451,41 @@
 % Photo on the left half, text on a maroon panel:
 %   \begin{picsplit}[kicker]{image}{title} ... \end{picsplit}
 \NewDocumentEnvironment{picsplit}{O{} m m +b}{%
-      \begingroup
-      \setbeamercolor{background canvas}{bg=maincolor}%
-      \setbeamercolor{normal text}{fg=white}%
-      \setbeamercolor{itemize item}{fg=dmblush}%
-      \setbeamercolor{itemize subitem}{fg=dmblush}%
-      \setbeamercolor{itemize/enumerate subbody}{fg=dmblush}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \dm@cover{0}{0}{7.92}{9}{#2}
-                  \node[anchor=south east] at (15.4,0.45) {\includegraphics[width=0.48cm]{\dm@whitelogo}};
-            }}%
-      \begin{frame}[plain]
-            \vskip0.65cm
-            \hspace*{7.86cm}\begin{minipage}[t]{6.4cm}
-                  \raggedright
-                  {\usebeamerfont{framekicker}\color{dmblush}\dm@spaced{#1}\strut\par}\vskip0.6mm
-                  {\usebeamerfont{frametitle}\color{white}#3\par}\vskip0.6cm
-                  \usebeamercolor[fg]{normal text}%
-                  #4
-            \end{minipage}
-      \end{frame}%
-      \endgroup}{}
+  \begingroup
+  \setbeamercolor{background canvas}{bg=maincolor}%
+  \setbeamercolor{normal text}{fg=white}%
+  \setbeamercolor{itemize item}{fg=dmblush}%
+  \setbeamercolor{itemize subitem}{fg=dmblush}%
+  \setbeamercolor{itemize/enumerate subbody}{fg=dmblush}%
+  \setbeamertemplate{background}{\dm@canvas{%
+      \dm@cover{0}{0}{7.92}{9}{#2}
+      \node[anchor=south east] at (15.4,0.45) {\includegraphics[width=0.48cm]{\dm@whitelogo}};
+    }}%
+  \begin{frame}[plain]
+    \vskip0.65cm
+    \hspace*{7.86cm}\begin{minipage}[t]{6.4cm}
+      \raggedright
+      {\usebeamerfont{framekicker}\color{dmblush}\dm@spaced{#1}\strut\par}\vskip0.6mm
+      {\usebeamerfont{frametitle}\color{white}#3\par}\vskip0.6cm
+      \usebeamercolor[fg]{normal text}%
+      #4
+    \end{minipage}
+  \end{frame}%
+  \endgroup}{}
 
 % Photo on the right edge, normal slide on the left:
 %   \begin{sidepic}{image}{title} ... \end{sidepic}
 \NewDocumentEnvironment{sidepic}{m m +b}{%
-      \begingroup
-      \setbeamertemplate{background}{\dm@canvas{\dm@cover{9.12}{0}{6.88}{9}{#1}}}%
-      \def\dm@titlewidth{7.4cm}%
-      \boolfalse{dm@footlogo}\footlinepayoff{}%
-      \begin{frame}{#2}
-            \begin{minipage}[t]{7.4cm}
-                  #3
-            \end{minipage}
-      \end{frame}%
-      \endgroup}{}
+  \begingroup
+  \setbeamertemplate{background}{\dm@canvas{\dm@cover{9.12}{0}{6.88}{9}{#1}}}%
+  \def\dm@titlewidth{7.4cm}%
+  \boolfalse{dm@footlogo}\footlinepayoff{}%
+  \begin{frame}{#2}
+    \begin{minipage}[t]{7.4cm}
+      #3
+    \end{minipage}
+  \end{frame}%
+  \endgroup}{}
 
 % ------------------------------------------------------------------
 % Closing slide with QR codes
@@ -462,71 +507,71 @@
 \newcommand{\linkedinqr}[1]{\addqr{LinkedIn}{#1}}
 \newcommand{\webpageqr}[1]{\addqr{Webpage}{#1}}
 \newcommand{\dm@smallqr}[2]{%
-      \begin{tabular}[b]{@{}c@{}}
-            \textcolor{maincolor}{\qrcode[height=1.15cm,nolink]{#2}}\\[1.2mm]
-            {\tiny\color{dmmuted}#1}
-      \end{tabular}\hskip3.5mm}
+  \begin{tabular}[b]{@{}c@{}}
+    \textcolor{maincolor}{\qrcode[height=1.15cm,nolink]{#2}} \\[1.2mm]
+    {\tiny\color{dmmuted}#1}
+  \end{tabular}\hskip3.5mm}
 
 \newcommand{\backmatter}[1][]{%
-      \begingroup
-      \hypersetup{urlcolor=maincolor}%
-      \setbeamertemplate{background}{\dm@canvas{%
-                  \dm@split{\dm@assets/background}
-                  \dm@toplogo{\dm@colorlogo}
-                  \node[anchor=south west] at (0.9,5.95)
-                  {\dmheadfont\fontsize{29}{32}\selectfont\color{dmink}\dm@closingtitle};
-                  \node[anchor=north west,text width=8cm,align=left] at (0.9,5.75) {%
-                        {\large\itshape\color{dmsubtext}\dm@closingmessage\par}%
-                        \ifdefempty{\dm@closingcontact}{}{\vskip2.5mm{\small\bfseries\color{maincolor}\dm@closingcontact\par}}};
-                  \node[anchor=south west] at (0.9,1.45) {%
-                        \ifdefempty{\dm@paperqr}{}{%
-                              \begin{tabular}[b]{@{}l@{}}
-                                    \textcolor{maincolor}{\qrcode[height=2.1cm,nolink]{\dm@paperqr}}\\[1.2mm]
-                                    {\usebeamerfont{framekicker}\color{maincolor}\dm@spaced{\dm@paperqrlabel}}
-                              \end{tabular}\hskip6mm}%
-                        \dm@smallqrs};
-            }}%
-      \begin{frame}[plain]\end{frame}%
-      \endgroup}
+\begingroup
+\hypersetup{urlcolor=maincolor}%
+\setbeamertemplate{background}{\dm@canvas{%
+\dm@split{\dm@assets/background}
+\dm@toplogo{\dm@colorlogo}
+\node[anchor=south west] at (0.9,5.95)
+{\dmheadfont\fontsize{29}{32}\selectfont\color{dmink}\dm@closingtitle};
+\node[anchor=north west,text width=8cm,align=left] at (0.9,5.75) {%
+{\large\itshape\color{dmsubtext}\dm@closingmessage\par}%
+\ifdefempty{\dm@closingcontact}{}{\vskip2.5mm{\small\bfseries\color{maincolor}\dm@closingcontact\par}}};
+\node[anchor=south west] at (0.9,1.45) {%
+  \ifdefempty{\dm@paperqr}{}{%
+    \begin{tabular}[b]{@{}l@{}}
+      \textcolor{maincolor}{\qrcode[height=2.1cm,nolink]{\dm@paperqr}} \\[1.2mm]
+      {\usebeamerfont{framekicker}\color{maincolor}\dm@spaced{\dm@paperqrlabel}}
+    \end{tabular}\hskip6mm}%
+  \dm@smallqrs};
+}}%
+\begin{frame}[plain]\end{frame}%
+\endgroup}
 
 \newcommand{\thankyoublock}{%
-      \begin{card}[maroon,large]{}\centering\textit{Thank you for your attention!}\end{card}}
+  \begin{card}[maroon,large]{}\centering\textit{Thank you for your attention!}\end{card}}
 
 % ------------------------------------------------------------------
 % Backward compatibility with the 2025 theme
 % ------------------------------------------------------------------
 % \themecolor{main}: maroon slide with white text
 \newcommand{\themecolor}[1]{%
-      \ifstrequal{#1}{main}{%
-            \setbeamercolor{background canvas}{bg=maincolor}%
-            \setbeamercolor{normal text}{fg=white,bg=maincolor}%
-            \setbeamercolor{frametitle}{fg=white}%
-            \setbeamercolor{framekicker}{fg=dmblush}%
-            \setbeamercolor{footline}{fg=dmblush}%
-            \setbeamercolor{itemize item}{fg=dmblush}%
-            \renewcommand{\dm@footlogo}{\dm@whitelogo}%
-      }{%
-            \setbeamercolor{background canvas}{bg=white}%
-            \setbeamercolor{normal text}{fg=dmtext,bg=white}%
-            \setbeamercolor{frametitle}{fg=dmink}%
-            \setbeamercolor{framekicker}{fg=maincolor}%
-            \setbeamercolor{footline}{fg=dmmuted}%
-            \setbeamercolor{itemize item}{fg=maincolor}%
-            \renewcommand{\dm@footlogo}{\dm@colorlogo}%
-      }}
+  \ifstrequal{#1}{main}{%
+    \setbeamercolor{background canvas}{bg=maincolor}%
+    \setbeamercolor{normal text}{fg=white,bg=maincolor}%
+    \setbeamercolor{frametitle}{fg=white}%
+    \setbeamercolor{framekicker}{fg=dmblush}%
+    \setbeamercolor{footline}{fg=dmblush}%
+    \setbeamercolor{itemize item}{fg=dmblush}%
+    \renewcommand{\dm@footlogo}{\dm@whitelogo}%
+  }{%
+    \setbeamercolor{background canvas}{bg=white}%
+    \setbeamercolor{normal text}{fg=dmtext,bg=white}%
+    \setbeamercolor{frametitle}{fg=dmink}%
+    \setbeamercolor{framekicker}{fg=maincolor}%
+    \setbeamercolor{footline}{fg=dmmuted}%
+    \setbeamercolor{itemize item}{fg=maincolor}%
+    \renewcommand{\dm@footlogo}{\dm@colorlogo}%
+  }}
 
 % chapter environment: maroon slide with optional split picture
 %   \begin{chapter}[image]{colour}{title} ... \end{chapter}
 \NewDocumentEnvironment{chapter}{O{} m m +b}{%
-      \begingroup
-      \themecolor{main}%
-      \ifstrempty{#2}{}{\setbeamercolor{background canvas}{bg=#2}}%
-      \ifstrempty{#1}{}{\setbeamertemplate{background}{\dm@canvas{\dm@split{#1}}}}%
-      \def\dm@titlewidth{7.4cm}%
-      \begin{frame}[plain]{#3}
-            \begin{minipage}[t]{7cm}
-                  \usebeamercolor[fg]{normal text}%
-                  #4
-            \end{minipage}
-      \end{frame}%
-      \endgroup}{}
+  \begingroup
+  \themecolor{main}%
+  \ifstrempty{#2}{}{\setbeamercolor{background canvas}{bg=#2}}%
+  \ifstrempty{#1}{}{\setbeamertemplate{background}{\dm@canvas{\dm@split{#1}}}}%
+  \def\dm@titlewidth{7.4cm}%
+  \begin{frame}[plain]{#3}
+    \begin{minipage}[t]{7cm}
+      \usebeamercolor[fg]{normal text}%
+      #4
+    \end{minipage}
+  \end{frame}%
+  \endgroup}{}

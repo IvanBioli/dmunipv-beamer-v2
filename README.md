@@ -12,8 +12,18 @@ See `template.tex` for a full demo.
 ```latex
 \documentclass{beamer}
 \usetheme[sectionstyle=diagonal]{dmpavia}   % or sectionstyle=numeral | none
+                                            % kicker=none hides the section name above frame titles
 \title{...} \subtitle{...} \author{...} \date{...}
 \course{Department of Mathematics · University of Pavia}   % label above the title
+```
+
+Fine tuning (in the preamble):
+
+```latex
+\setlength{\dmheadskip}{0.42cm}    % space above the frame title
+\setlength{\dmtitleskip}{0.15cm}   % space between frame title and content
+\setbeamerfont{title}{size=\fontsize{16}{19}}   % title page: also subtitle, author, date
+\setbeamerfont{slideref}{size=\fontsize{5}{6}}  % bottom-of-slide references
 ```
 
 ## Slides
@@ -23,7 +33,8 @@ See `template.tex` for a full demo.
 | Title slide | `\maketitle` |
 | Outline (maroon panel, numbered sections) | `\outlineframe` or `\outlineframe[Agenda]` |
 | Section header | automatic at each `\section`; style set once by the theme option. `\sectionlead{...}` before `\section` adds a one-line summary |
-| Kicker above the frame title | defaults to the section name; `\framekicker{...}` or `\nokicker` inside a frame |
+| Kicker above the frame title | defaults to the section name (theme option `kicker=none` hides it); `\framekicker{...}` or `\nokicker` before the frame, e.g. `\begingroup\nokicker \begin{frame}...\end{frame}\endgroup` |
+| References at the bottom of the slide | `\slidecite{key1,key2}` gives "Badia et al., Title, 2024" (biblatex; uses the `shorttitle` field if present); `\slideref{free text}` for anything else |
 | Column headings | `\colheading{Kept from Beamer}` |
 | Big numbers | `\bignumber{16}{slide layouts}` (use inside columns) |
 | Photo left, maroon panel right | `\begin{picsplit}[kicker]{image}{title} ... \end{picsplit}` |
